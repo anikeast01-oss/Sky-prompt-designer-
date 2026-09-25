@@ -1,0 +1,6 @@
+{
+  "name": "Sky Prompt Designer",
+  "description": "Transform any idea or topic into professional, highly-structured AI prompts with intelligent role, context, and quality scoring.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
