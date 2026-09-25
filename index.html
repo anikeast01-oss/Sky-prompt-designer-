@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sky Prompt Designer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night:#0B1830;
+    --twilight:#1E3A5F;
+    --sky:#4A7FB5;
+    --dawn:#E8A33D;
+    --paper:#F6F3EC;
+    --ink:#12202F;
+    --ink-soft:#4B5A6B;
+    --line:rgba(18,32,47,0.14);
+    --radius-panel: 4px;
+    box-sizing:border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-padding-top: env(safe-area-inset-top, 0px); scroll-behavior:smooth;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#0E1520;
+      --ink:#EDEFF2;
+      --ink-soft:#A7B2BE;
+      --line:rgba(237,239,242,0.14);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0E1520;
+    --ink:#EDEFF2;
+    --ink-soft:#A7B2BE;
+    --line:rgba(237,239,242,0.14);
+  }
+
+  h1,h2,h3{font-family:'Fraunces', serif; margin:0; font-weight:500;}
+
+  a{color:inherit;}
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative;
+    min-height:78vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    padding:calc(env(safe-area-inset-top,0px) + 28px) 6vw 64px;
+    overflow:hidden;
+    background:linear-gradient(180deg, var(--night) 0%, var(--twilight) 46%, var(--sky) 78%, #C9DCEC 100%);
+  }
+  .hero::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:
+      radial-gradient(1.5px 1.5px at 12% 18%, rgba(255,255,255,0.9), transparent),
+      radial-gradient(1px 1px at 24% 9%, rgba(255,255,255,0.7), transparent),
+      radial-gradient(1.5px 1.5px at 38% 22%, rgba(255,255,255,0.8), transparent),
+      radial-gradient(1px 1px at 55% 6%, rgba(255,255,255,0.6), transparent),
+      radial-gradient(1.5px 1.5px at 68% 14%, rgba(255,255,255,0.85), transparent),
+      radial-gradient(1px 1px at 82% 8%, rgba(255,255,255,0.6), transparent),
+      radial-gradient(1.5px 1.5px at 90% 20%, rgba(255,255,255,0.7), transparent);
+    opacity:0.9;
+    pointer-events:none;
+  }
+  .horizon-line{
+    position:absolute;
+    left:0; right:0;
+    top:64%;
+    height:1px;
+    background:rgba(255,255,255,0.35);
+  }
+  .hero-tag{
+    color:rgba(255,255,255,0.78);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.78rem;
+    letter-spacing:0.02em;
+    margin-bottom:18px;
+    position:relative;
+    z-index:1;
+  }
+  .hero h1{
+    position:relative;
+    z-index:1;
+    color:#FBF8F2;
+    font-size:clamp(2.6rem, 8vw, 5.6rem);
+    line-height:0.98;
+    max-width:14ch;
+  }
+  .hero p{
+    position:relative;
+    z-index:1;
+    color:rgba(255,255,255,0.86);
+    max-width:46ch;
+    font-size:clamp(1rem, 2.2vw, 1.2rem);
+    line-height:1.55;
+    margin-top:20px;
+  }
+  .hero-cta{
+    position:relative;
+    z-index:1;
+    margin-top:34px;
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    width:fit-content;
+    background:var(--dawn);
+    color:#241505;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:600;
+    font-size:0.95rem;
+    padding:13px 22px;
+    border-radius:999px;
+    text-decoration:none;
+    border:none;
+    cursor:pointer;
+    transition:transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .hero-cta:hover{ transform:translateY(-1px); box-shadow:0 8px 20px rgba(232,163,61,0.35); }
+
+  /* ---------- SECTION SHELL ---------- */
+  section{ padding:72px 6vw; }
+  .section-head{ max-width:60ch; margin-bottom:44px; }
+  .section-head h2{ font-size:clamp(1.6rem, 3.2vw, 2.3rem); }
+  .section-head p{ color:var(--ink-soft); font-size:1.02rem; margin-top:12px; line-height:1.6; }
+
+  /* ---------- BUILDER ---------- */
+  .builder{
+    display:grid;
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+    gap:28px;
+    align-items:start;
+  }
+  @media (max-width: 860px){
+    .builder{ grid-template-columns: 1fr; }
+  }
+  .panel{
+    border:1px solid var(--line);
+    border-radius:var(--radius-panel);
+    padding:26px;
+    background:transparent;
+  }
+  .panel-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.72rem;
+    color:var(--ink-soft);
+    margin-bottom:18px;
+    display:flex;
+    justify-content:space-between;
+  }
+  .field{ margin-bottom:18px; }
+  .field label{
+    display:block;
+    font-size:0.86rem;
+    font-weight:600;
+    margin-bottom:7px;
+  }
+  .field .hint{
+    font-size:0.78rem;
+    color:var(--ink-soft);
+    margin-top:5px;
+  }
+  .field input[type="text"],
+  .field textarea,
+  .field select{
+    width:100%;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:0.95rem;
+    color:var(--ink);
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:10px 12px;
+    outline:none;
+  }
+  .field input[type="text"]:focus,
+  .field textarea:focus,
+  .field select:focus{
+    border-color:var(--sky);
+    box-shadow:0 0 0 3px rgba(74,127,181,0.18);
+  }
+  .field textarea{ min-height:70px; resize:vertical; }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:520px){ .row2{ grid-template-columns:1fr; } }
+
+  .presets{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px; }
+  .preset-btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.74rem;
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--ink-soft);
+    padding:7px 12px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:border-color 0.15s ease, color 0.15s ease;
+  }
+  .preset-btn:hover{ border-color:var(--sky); color:var(--ink); }
+
+  .build-btn{
+    width:100%;
+    background:var(--night);
+    color:#F6F3EC;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:600;
+    font-size:0.95rem;
+    padding:13px 18px;
+    border:none;
+    border-radius:3px;
+    cursor:pointer;
+    margin-top:6px;
+    transition:background 0.15s ease;
+  }
+  .build-btn:hover{ background:var(--twilight); }
+
+  .output-panel{
+    position:sticky;
+    top:16px;
+  }
+  .readout{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.86rem;
+    line-height:1.65;
+    white-space:pre-wrap;
+    word-break:break-word;
+    min-height:260px;
+    color:var(--ink);
+  }
+  .readout .placeholder{ color:var(--ink-soft); }
+  .output-actions{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:18px;
+    padding-top:14px;
+    border-top:1px solid var(--line);
+  }
+  .meta-readout{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.74rem;
+    color:var(--ink-soft);
+  }
+  .copy-btn{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:0.84rem;
+    font-weight:600;
+    background:transparent;
+    border:1px solid var(--ink);
+    color:var(--ink);
+    padding:8px 16px;
+    border-radius:3px;
+    cursor:pointer;
+  }
+  .copy-btn:hover{ background:var(--ink); color:var(--paper); }
+  .copy-btn.copied{ background:var(--dawn); border-color:var(--dawn); color:#241505; }
+
+  /* ---------- PRINCIPLES ---------- */
+  .principles{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+    gap:0;
+    border-top:1px solid var(--line);
+  }
+  .principle{
+    padding:26px 22px 26px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .principle + .principle{ padding-left:22px; }
+  .principle .instrument{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.72rem;
+    color:var(--sky);
+    margin-bottom:10px;
+  }
+  .principle h3{ font-size:1.15rem; margin-bottom:8px; }
+  .principle p{ color:var(--ink-soft); font-size:0.92rem; line-height:1.55; margin:0; }
+
+  footer{
+    padding:36px 6vw 48px;
+    border-top:1px solid var(--line);
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.76rem;
+    color:var(--ink-soft);
+  }
+
+  ::selection{ background:var(--dawn); color:#241505; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="horizon-line"></div>
+  <div class="hero-tag">sky prompt designer / prompt flight planning</div>
+  <h1>Give your prompt<br>a flight plan.</h1>
+  <p>Answer a few questions about what you need from an AI model. Sky Prompt Designer assembles the goal, context, tone and constraints into a clear, well-structured prompt you can paste anywhere.</p>
+  <button class="hero-cta" onclick="document.getElementById('builder').scrollIntoView()">Start building ↓</button>
+</div>
+
+<section id="builder">
+  <div class="section-head">
+    <h2>Set your instruments</h2>
+    <p>Fill in what you know. Leave the rest blank — the designer only includes what you give it, so the prompt stays tight instead of padded with placeholders.</p>
+  </div>
+
+  <div class="presets">
+    <button class="preset-btn" data-preset="blog">Blog post</button>
+    <button class="preset-btn" data-preset="code">Code review</button>
+    <button class="preset-btn" data-preset="email">Difficult email</button>
+    <button class="preset-btn" data-preset="summary">Document summary</button>
+    <button class="preset-btn" data-preset="clear">Clear all</button>
+  </div>
+
+  <div class="builder">
+    <div class="panel">
+      <div class="panel-label"><span>controls</span><span>01</span></div>
+
+      <div class="field">
+        <label for="goal">What do you need the model to do?</label>
+        <textarea id="goal" placeholder="e.g. Write a launch announcement for our new pricing plan"></textarea>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label for="role">Role to give the model</label>
+          <input type="text" id="role" placeholder="e.g. senior product marketer">
+        </div>
+        <div class="field">
+          <label for="audience">Audience</label>
+          <input type="text" id="audience" placeholder="e.g. existing customers">
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label for="tone">Tone</label>
+          <select id="tone">
+            <option value="">No preference</option>
+            <option>Direct and plain</option>
+            <option>Warm and conversational</option>
+            <option>Formal</option>
+            <option>Playful</option>
+            <option>Technical and precise</option>
+            <option>Persuasive</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="format">Output format</label>
+          <select id="format">
+            <option value="">No preference</option>
+            <option>A short paragraph</option>
+            <option>A bulleted list</option>
+            <option>A numbered step-by-step guide</option>
+            <option>A table</option>
+            <option>Code, with brief comments</option>
+            <option>An email, with subject line</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="context">Background the model needs</label>
+        <textarea id="context" placeholder="e.g. We're moving from 3 pricing tiers to 2, effective next month"></textarea>
+        <div class="hint">Facts, definitions, or context the model can't guess.</div>
+      </div>
+
+      <div class="field">
+        <label for="constraints">Constraints</label>
+        <textarea id="constraints" placeholder="e.g. Under 150 words. Don't mention competitors. Must include the new price."></textarea>
+        <div class="hint">Length limits, must-includes, things to avoid.</div>
+      </div>
+
+      <button class="build-btn" onclick="buildPrompt()">Assemble prompt</button>
+    </div>
+
+    <div class="panel output-panel">
+      <div class="panel-label"><span>readout</span><span id="statusIndicator">standing by</span></div>
+      <div class="readout" id="readout"><span class="placeholder">Your assembled prompt will appear here once you set your instruments and assemble.</span></div>
+      <div class="output-actions">
+        <span class="meta-readout" id="wordCount"></span>
+        <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">Copy prompt</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <h2>What actually makes a prompt work</h2>
+    <p>Sky Prompt Designer is built around four instruments. Skip any of them and the model has to guess — which is where most disappointing answers come from.</p>
+  </div>
+  <div class="principles">
+    <div class="principle">
+      <div class="instrument">role</div>
+      <h3>Who is answering</h3>
+      <p>A role narrows the model's assumptions about vocabulary, depth, and priorities before it writes a word.</p>
+    </div>
+    <div class="principle">
+      <div class="instrument">context</div>
+      <h3>What it can't guess</h3>
+      <p>Facts, constraints, and background specific to your situation. Without it, the model fills gaps with plausible-sounding averages.</p>
+    </div>
+    <div class="principle">
+      <div class="instrument">format</div>
+      <h3>The shape of the answer</h3>
+      <p>Naming the output shape — list, table, email — saves a rewrite. Models default to prose unless told otherwise.</p>
+    </div>
+    <div class="principle">
+      <div class="instrument">constraints</div>
+      <h3>The edges to stay inside</h3>
+      <p>Length, tone limits, and things to avoid turn a generic answer into one that fits the one place it needs to go.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span>sky prompt designer</span>
+  <span>built for clearer instructions, not for you to memorize them</span>
+</footer>
+
+<script>
+const presets = {
+  blog: {
+    goal: "Write a blog post announcing our new mobile app feature that lets users share playlists with friends.",
+    role: "content marketer for a music streaming app",
+    audience: "existing app users who follow our blog",
+    tone: "Warm and conversational",
+    format: "A short paragraph",
+    context: "The feature launches next Tuesday. It works on iOS and Android. Users can share a playlist link that opens directly in the app.",
+    constraints: "Around 200 words. Include a line encouraging people to try it."
+  },
+  code: {
+    goal: "Review this pull request and point out bugs, style issues, and missing edge cases.",
+    role: "senior backend engineer",
+    audience: "a mid-level engineer on my team",
+    tone: "Direct and plain",
+    format: "A bulleted list",
+    context: "The PR adds a new endpoint for exporting user data as CSV. Written in Python with Flask.",
+    constraints: "Flag anything security-related first. Keep each point to one or two sentences."
+  },
+  email: {
+    goal: "Write an email telling a client their project timeline is slipping by two weeks.",
+    role: "project manager",
+    audience: "a client who is already frustrated with the pace of delivery",
+    tone: "Formal",
+    format: "An email, with subject line",
+    context: "The delay is due to a vendor issue outside our control. We've already added a second engineer to catch up.",
+    constraints: "Don't over-apologize. State the new date clearly. Under 120 words."
+  },
+  summary: {
+    goal: "Summarize this 40-page research report into something a non-technical executive can read in two minutes.",
+    role: "research analyst",
+    audience: "a company executive with no background in the subject",
+    tone: "Direct and plain",
+    format: "A bulleted list",
+    context: "The report covers customer churn patterns across three regions over the last year.",
+    constraints: "5 bullets maximum. Lead with the single most important finding."
+  }
+};
+
+document.querySelectorAll(".preset-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const key = btn.dataset.preset;
+    if(key === "clear"){
+      ["goal","role","audience","context","constraints"].forEach(id => document.getElementById(id).value = "");
+      document.getElementById("tone").value = "";
+      document.getElementById("format").value = "";
+      return;
+    }
+    const p = presets[key];
+    document.getElementById("goal").value = p.goal;
+    document.getElementById("role").value = p.role;
+    document.getElementById("audience").value = p.audience;
+    document.getElementById("tone").value = p.tone;
+    document.getElementById("format").value = p.format;
+    document.getElementById("context").value = p.context;
+    document.getElementById("constraints").value = p.constraints;
+  });
+});
+
+function buildPrompt(){
+  const goal = document.getElementById("goal").value.trim();
+  const role = document.getElementById("role").value.trim();
+  const audience = document.getElementById("audience").value.trim();
+  const tone = document.getElementById("tone").value;
+  const format = document.getElementById("format").value;
+  const context = document.getElementById("context").value.trim();
+  const constraints = document.getElementById("constraints").value.trim();
+
+  const readout = document.getElementById("readout");
+  const statusIndicator = document.getElementById("statusIndicator");
+  const wordCount = document.getElementById("wordCount");
+
+  if(!goal){
+    readout.innerHTML = '<span class="placeholder">Add at least what you need the model to do — that\\'s the one required instrument.</span>';
+    statusIndicator.textContent = "missing goal";
+    wordCount.textContent = "";
+    return;
+  }
+
+  let lines = [];
+
+  if(role){
+    lines.push(`You are a ${role}.`);
+  }
+
+  lines.push(goal);
+
+  const details = [];
+  if(audience) details.push(`Audience: ${audience}.`);
+  if(tone) details.push(`Tone: ${tone.toLowerCase()}.`);
+  if(format) details.push(`Format: ${format.toLowerCase()}.`);
+  if(details.length){
+    lines.push(details.join(" "));
+  }
+
+  if(context){
+    lines.push(`Context:\n${context}`);
+  }
+
+  if(constraints){
+    lines.push(`Constraints:\n${constraints}`);
+  }
+
+  const finalPrompt = lines.join("\n\n");
+  readout.textContent = finalPrompt;
+  statusIndicator.textContent = "assembled";
+
+  const words = finalPrompt.split(/\s+/).filter(Boolean).length;
+  wordCount.textContent = `${words} words`;
+
+  const copyBtn = document.getElementById("copyBtn");
+  copyBtn.textContent = "Copy prompt";
+  copyBtn.classList.remove("copied");
+}
+
+function copyPrompt(){
+  const readout = document.getElementById("readout");
+  const text = readout.textContent;
+  if(!text || readout.querySelector(".placeholder")) return;
+
+  const copyBtn = document.getElementById("copyBtn");
+  const fallback = () => {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand("copy"); }catch(e){}
+    document.body.removeChild(ta);
+  };
+
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).catch(fallback);
+  } else {
+    fallback();
+  }
+
+  copyBtn.textContent = "Copied";
+  copyBtn.classList.add("copied");
+  setTimeout(() => {
+    copyBtn.textContent = "Copy prompt";
+    copyBtn.classList.remove("copied");
+  }, 1800);
+}
+</script>
+
+</body>
+</html>
